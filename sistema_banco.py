@@ -1,66 +1,146 @@
+import datetime
+
 class Cliente:
-    def __init__(self, nome, sobrenome, idade, sexo, raca):
+    def __init__(self, id_cliente, nome, sobrenome, idade, sexo, raca):
+        self.id_cliente = id_cliente
         self.nome = nome
         self.sobrenome = sobrenome
         self.idade = idade
         self.sexo = sexo
         self.raca = raca
 
-    def mostrar_informacoes_cliente(self):
-        print(f'Nome do cliente : {self.nome} {self.sobrenome}\nIdade : {self.idade}\nSexo : {self.sexo}\nRaça : {self.raca}')
+    def mostrar_informacoes(self):
+        print(f'\nInformações do Cliente:')
+        print(f'ID: {self.id_cliente}')
+        print(f'Nome: {self.nome} {self.sobrenome}')
+        print(f'Idade: {self.idade}')
+        print(f'Sexo: {self.sexo}')
+        print(f'Raça: {self.raca}')
 
-class Conta(Cliente):
-    def __init__(self, nome, sobrenome, idade, sexo, raca, numero_conta, tipo_conta):
-        super().__init__(nome, sobrenome, idade, sexo, raca)
+
+class Conta:
+    def __init__(self, cliente, numero_conta, tipo_conta):
+        self.cliente = cliente
         self.numero_conta = numero_conta
         self.tipo_conta = tipo_conta
-        self.saldo = 0
-    
-    def mostrar_informacoes_cliente(self):
-        super().mostrar_informacoes_cliente()
-        print(f'Número da conta : {self.numero_conta}\nTipo da conta : {self.tipo_conta}')
+        self.saldo = 0.0
+        self.historico = []
 
     def extrato(self):
-        print(f'Saldo atual : {self.saldo}')
-
-    def sacar(self, valorSaque):
-        if self.saldo < valorSaque:
-            raise ValueError('O cliente não possui valor suficiente para completar a transação.')
+        print(f'\nExtrato da Conta {self.numero_conta}')
+        print(f'Tipo: {self.tipo_conta}')
+        print(f'Saldo atual: R$ {self.saldo:.2f}')
+        if not self.historico:
+            print("Sem movimentações.")
         else:
-            self.saldo -= valorSaque
+            for item in self.historico:
+                print(f"{item['data']} - {item['tipo']} - R$ {item['valor']:.2f}")
 
-    def depositar(self, valorDeposito):
-        self.saldo += valorDeposito
+    def sacar(self, valor):
+        if valor <= 0:
+            print("Valor inválido para saque.")
+            return
+        if self.saldo < valor:
+            print("Saldo insuficiente para saque.")
+            return
+        self.saldo -= valor
+        self.historico.append({
+            'tipo': 'Saque',
+            'valor': valor,
+            'data': datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        })
+        print("Saque realizado com sucesso.")
 
-novo_usuario = None  # Inicializa variável antes do loop
+    def depositar(self, valor):
+        if valor <= 0:
+            print("Valor inválido para depósito.")
+            return
+        self.saldo += valor
+        self.historico.append({
+            'tipo': 'Depósito',
+            'valor': valor,
+            'data': datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        })
+        print("Depósito realizado com sucesso.")
+
+# Aplicação
+clientes = {}
+conta_corrente = None
 
 while True:
     try:
-        opcao = int(input('Escolha uma das seguintes opções:\n1 - Cadastrar Cliente\n2 - Listar dados do usuário\n3 - Sair\n'))
+        print("\n=== Menu Principal ===")
+        print("1 - Cadastrar Cliente")
+        print("2 - Criar Conta")
+        print("3 - Mostrar Informações do Cliente")
+        print("4 - Depositar")
+        print("5 - Sacar")
+        print("6 - Ver Extrato")
+        print("7 - Sair")
+        opcao = int(input("Escolha uma opção: "))
 
         if opcao == 1:
-            nome_novo_usuario = input('Informe o nome do novo usuário: ')
-            sobrenome_novo_usuario = input('Informe o sobrenome do novo usuário: ')
-            idade_novo_usuario = int(input('Informe a idade do novo usuário: '))
-            sexo_novo_usuario = input('Informe o sexo do novo usuário: ')
-            raca_novo_usuario = input('Informe a raça do novo usuário: ')
-            novo_usuario = Cliente(nome_novo_usuario, sobrenome_novo_usuario, idade_novo_usuario, sexo_novo_usuario, raca_novo_usuario)
-            print("Usuário cadastrado com sucesso!")
+            id_cliente = int(input("ID do cliente: "))
+            if id_cliente in clientes:
+                print("ID já cadastrado.")
+                continue
+            nome = input("Nome: ")
+            sobrenome = input("Sobrenome: ")
+            idade = int(input("Idade: "))
+            sexo = input("Sexo (M/F): ")
+            raca = input("Raça: ")
+            cliente = Cliente(id_cliente, nome, sobrenome, idade, sexo, raca)
+            clientes[id_cliente] = cliente
+            print("Cliente cadastrado com sucesso.")
 
         elif opcao == 2:
-            if novo_usuario is None:
-                print("Nenhum usuário cadastrado ainda.")
-            else:
-                novo_usuario.mostrar_informacoes_cliente()
+            if not clientes:
+                print("Cadastre um cliente primeiro.")
+                continue
+            id_cliente = int(input("ID do cliente: "))
+            cliente = clientes.get(id_cliente)
+            if not cliente:
+                print("Cliente não encontrado.")
+                continue
+            numero_conta = input("Número da conta: ")
+            tipo_conta = input("Tipo da conta (Corrente/Poupança): ")
+            conta_corrente = Conta(cliente, numero_conta, tipo_conta)
+            print("Conta criada com sucesso.")
 
         elif opcao == 3:
-            print("Encerrando o programa...")
+            if conta_corrente is None:
+                print("Nenhuma conta ativa.")
+            else:
+                conta_corrente.cliente.mostrar_informacoes()
+
+        elif opcao == 4:
+            if conta_corrente is None:
+                print("Nenhuma conta ativa.")
+            else:
+                valor = float(input("Valor para depósito: R$ "))
+                conta_corrente.depositar(valor)
+
+        elif opcao == 5:
+            if conta_corrente is None:
+                print("Nenhuma conta ativa.")
+            else:
+                valor = float(input("Valor para saque: R$ "))
+                conta_corrente.sacar(valor)
+
+        elif opcao == 6:
+            if conta_corrente is None:
+                print("Nenhuma conta ativa.")
+            else:
+                conta_corrente.extrato()
+
+        elif opcao == 7:
+            print("Saindo do programa...")
             break
 
         else:
-            print("Opção inválida, tente novamente.")
+            print("Opção inválida.")
 
     except ValueError:
-        print("Entrada inválida. Por favor, digite um número válido para a opção ou idade.")
+        print("Entrada inválida. Digite corretamente.")
     except Exception as e:
         print(f"Ocorreu um erro: {e}")
